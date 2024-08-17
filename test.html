@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>产品定价计算器</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"] {
+            width: 200px;
+            padding: 5px;
+        }
+        select, input[type="text"] {
+            width: 200px;
+            padding: 5px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>产品定价计算器</h1>
+    <div>
+        <!-- <div class="form-group">
+            <label for="countrySelect">选择国家：</label>
+            <select id="countrySelect" onchange="fetchExchangeRate(this.value)">
+                <option value="USD">美元 (USD)</option>
+                <option value="JPY">日元 (JPY)</option>
+                <option value="EUR">欧元 (EUR)</option>
+            </select>
+        </div> -->
+        <div class="form-group">
+            <label for="currencySelect">选择币种：</label>
+            <select id="currencySelect" onchange="displayExchangeRate()"></select>
+        </div>
+        <div class="form-group">
+            <label for="exchangeRate">汇率：</label>
+            <input type="number" id="exchangeRate" readonly>
+        </div>
+        <div class="form-group">
+            <label>最后更新时间：</label>
+            <span id="lastUpdateTime">等待更新...</span>
+        </div>
+        <!-- <div class="form-group">
+            <label for="rateUpdateTime">汇率更新时间：</label>
+            <input type="text" id="rateUpdateTime" readonly>
+        </div> -->
+        <div class="form-group">
+            <label for="purchasePrice">采购价（元）:</label>
+            <input type="number" id="purchasePrice" required>
+        </div>
+        <div class="form-group">
+            <label for="domesticShipping">国内运费（元）:</label>
+            <input type="number" id="domesticShipping" required>
+        </div>
+        <div class="form-group">
+            <label for="productWeight">产品重量（kg）:</label>
+            <input type="number" step="0.01" id="productWeight" required>
+            </>
+
+            <div class="form-group">
+                <label for="expressBoxWeight">快递盒重量（kg）:</label>
+                <input type="number" step="0.01" id="expressBoxWeight" value="0.05">
+            </div>
+            <div class="form-group">
+                <label for="shippingCost">国际运费（元/kg）:</label>
+                <input type="number" id="shippingCost" value="88">
+            </div>
+            <div class="form-group">
+                <label for="registrationFee">挂号费（元）:</label>
+                <input type="number" id="registrationFee" value="16">
+            </div>
+            <div class="form-group">
+                <label for="profit">利润:</label>
+                <input type="number" id="profit" value="30">
+            </div>
+            <button onclick="calculatePrice()">计算产品定价</button>
+        </div>
+        <div class="result" id="result"></div>
+        
+        <script>
+            // function fetchExchangeRate(currencyCode) {
+            //     var apiUrl = 'http://api.k780.com/?app=finance.rate&scur=' + currencyCode + '&tcur=CNY&appkey=YOUR_APPKEY&sign=YOUR_SIGN&format=json';
+            //     $.ajax({
+            //         url: apiUrl,
+            //         dataType: 'jsonp',
+            //         jsonp: 'callback',
+            //         success: function (data) {
+            //             if (data.success === '1') {
+            //                 document.getElementById('exchangeRate').value = data.result.rate;
+            //                 document.getElementById('rateUpdateTime').value = new Date().toLocaleTimeString();
+            //             } else {
+            //                 alert('Error: ' + data.msgid + ' - ' + data.msg);
+            //             }
+            //         },
+            //         error: function () {
+            //             alert('Failed to fetch exchange rate.');
+            //         }
+            //     });
+            // }
+
+             // 页面加载时执行
+        window.onload = function() {
+            fetchExchangeRates();
+        
+        };
+
+        function fetchExchangeRates() {
+            var apiUrl = 'https://v6.exchangerate-api.com/v6/fad8e5c4615b4189274ddee8/latest/CNY';
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    window.rates = data.conversion_rates; // 以美元为例
+                    document.getElementById('lastUpdateTime').textContent = '最后更新时间：' + data.time_last_update_utc;
+                    populateCurrencySelect(data.conversion_rates);
+                })
+                .catch(error => console.error('Error fetching exchange rates:', error));
+        }
+
+        function populateCurrencySelect(rates) {
+            var currencySelect = document.getElementById('currencySelect');
+            // 清空当前选项
+            currencySelect.innerHTML = '';
+
+            // 添加新选项
+            console.log(rates);
+            for (var currency in {'USD':rates['USD'],'EUR':rates['EUR'],'JPY':rates['JPY'],'MXN':rates['MXN'],'CAD':rates['CAD']}) {
+                console.log(currency);
+                var option = document.createElement('option');
+                option.value = currency;
+                option.textContent = currency;
+                currencySelect.appendChild(option);
+            }
+
+            // 触发币种选择事件，以便显示第一个币种的汇率
+            // currencySelect.dispatchEvent(new Event('change'));
+            
+            $('#currencySelect').val('USD');
+            $('#exchangeRate').val(window.rates['USD']);
+        }
+
+        function displayExchangeRate() {
+            var currencySelect = document.getElementById('currencySelect');
+            var selectedCurrency = currencySelect.value;
+            window.selectedCur = selectedCurrency;
+
+            // 显示选中币种的汇率
+            document.getElementById('exchangeRate').value = window.rates[selectedCurrency];
+        }
+            function calculatePrice() {
+                const purchasePrice = parseFloat(document.getElementById('purchasePrice').value);//产品进价（元）
+                const domesticShipping = parseFloat(document.getElementById('domesticShipping').value);//国内运费（元）
+                const productWeight = parseFloat(document.getElementById('productWeight').value);//产品重量（kg）
+                const expressBoxWeight = parseFloat(document.getElementById('expressBoxWeight').value);//快递盒重量（kg）
+                const shippingCost = parseFloat(document.getElementById('shippingCost').value);//运费（元/kg）
+                const registrationFee = parseFloat(document.getElementById('registrationFee').value);//挂号费（元）
+                const exchangeRate = parseFloat(document.getElementById('exchangeRate').value);//汇率:
+                const profit = parseFloat(document.getElementById('profit').value);//利润
+                const transServiceFee = 1.15;
+
+                const totalWeight = productWeight + expressBoxWeight;
+
+                const internationalShippingCost = Math.ceil((totalWeight * shippingCost + registrationFee) * transServiceFee * 100) / 100;
+                console.log(totalWeight * shippingCost + registrationFee)
+                console.log(internationalShippingCost)
+                console.log(profit)
+
+                const totalCost = purchasePrice + domesticShipping + internationalShippingCost + profit;
+                console.log(totalCost)
+                const finalPriceInUSD = parseFloat(Math.ceil(totalCost * exchangeRate * 100) / 100);
+                const finalPriceAfterCommission = parseFloat(Math.ceil(finalPriceInUSD / 0.85 * 100) / 100);
+
+                document.getElementById('result').innerText =
+                    `产品最终售价: ${window.selectedCur}-${finalPriceAfterCommission}`;
+            }
+        </script>
+</body>
+
+</html>
