@@ -1,0 +1,68 @@
+[
+    {
+        "category": "yuntuSpecialLineRegisteredGeneral",
+        "calculationMethod": "registeredCalculation",
+        "country": "USD",
+        "weightRangeStart": 0,
+        "weightRangeEnd": 0.1,
+        "incrementWeight": null,
+        "minimumChargeableWeight": 0.05,
+        "freightRatePerKg": 90,
+        "registrationFeePerPiece": 20
+    },
+    {
+        "category": "yuntuSpecialLineRegisteredGeneral",
+        "calculationMethod": "registeredCalculation",
+        "country": "USD",
+        "weightRangeStart": 0.1,
+        "weightRangeEnd": 0.2,
+        "incrementWeight": null,
+        "minimumChargeableWeight": null,
+        "freightRatePerKg": 90,
+        "registrationFeePerPiece": 18
+    },
+    {
+        "category": "yuntuSpecialLineRegisteredGeneral",
+        "calculationMethod": "registeredCalculation",
+        "country": "USD",
+        "weightRangeStart": 0.2,
+        "weightRangeEnd": 0.45,
+        "incrementWeight": null,
+        "minimumChargeableWeight": null,
+        "freightRatePerKg": 88,
+        "registrationFeePerPiece": 16
+    },
+    {
+        "category": "yuntuSpecialLineRegisteredGeneral",
+        "calculationMethod": "registeredCalculation",
+        "country": "USD",
+        "weightRangeStart": 0.45,
+        "weightRangeEnd": 0.7,
+        "incrementWeight": null,
+        "minimumChargeableWeight": null,
+        "freightRatePerKg": 86,
+        "registrationFeePerPiece": 16
+    },
+    {
+        "category": "yuntuSpecialLineRegisteredGeneral",
+        "calculationMethod": "registeredCalculation",
+        "country": "USD",
+        "weightRangeStart": 0.7,
+        "weightRangeEnd": 2,
+        "incrementWeight": null,
+        "minimumChargeableWeight": null,
+        "freightRatePerKg": 86,
+        "registrationFeePerPiece": 9
+    },
+    {
+        "category": "yuntuSpecialLineRegisteredGeneral",
+        "calculationMethod": "registeredCalculation",
+        "country": "USD",
+        "weightRangeStart": 2,
+        "weightRangeEnd": 30,
+        "incrementWeight": null,
+        "minimumChargeableWeight": null,
+        "freightRatePerKg": 83,
+        "registrationFeePerPiece": 9
+    }
+]
