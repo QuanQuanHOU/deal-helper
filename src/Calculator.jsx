@@ -7,16 +7,16 @@ const Calculator = () => {
     const [exchangeRates, setExchangeRates] = useState({});
     const [selectedCurrency, setSelectedCurrency] = useState('USD');
     const [lastUpdateTime, setLastUpdateTime] = useState('等待更新...');
-    const [finalPrice, setFinalPrice] = useState(0);
+    const [finalPrice, setFinalPrice] = useState('');
     const [logisticsCategory, setLogisticsCategory] = useState('');
-    const [calculationMethod, setCalculationMethod] = useState();
+    const [calculationMethod, setCalculationMethod] = useState('');
     const [inputs, setFormData] = useState({
         purchasePrice: '',
         domesticShipping: '',
         productWeight: '',
         expressBoxWeight: 0.05,
-        shippingCost: 88,
-        registrationFee: 16,
+        shippingCost: '',
+        registrationFee: '',
         profit: 30
     });
 
@@ -31,40 +31,60 @@ const Calculator = () => {
 
         loadExchangeRates();
     }, []);
-    const handleLogisticPrice = async () => {
+    const handleLogisticPrice = async (expressBoxWeight, productWeight, logisticsCategory, selectedCurrency) => {
 
-        if (!inputs.expressBoxWeight || !inputs.productWeight || !logisticsCategory || !selectedCurrency) {
+        if (!expressBoxWeight || !productWeight || !logisticsCategory || !selectedCurrency) {
             return;
         }
-        const totalWeight = inputs.productWeight + inputs.expressBoxWeight;
+        const totalWeight = parseFloat(productWeight) + parseFloat(expressBoxWeight);
 
         const logisticsRes = await getLogisticsPrice(logisticsCategory, totalWeight, selectedCurrency);
+        if (!logisticsRes) {
+            // 更新前端信息
+            setCalculationMethod('');
+
+            setFormData((preinputs) => {
+                return {
+                    ...preinputs,
+                    registrationFee: '',
+                    shippingCost: '',
+                };
+            });
+            return;
+        }
 
         // 更新前端信息
         setCalculationMethod(logisticsRes.calculationMethod);
-        const newInputs = {
-            ...inputs,
-            registrationFee: logisticsRes.registrationFeePerPiece,
-            shippingCost: logisticsRes.freightRatePerKg,
 
-        }
-        setFormData(newInputs);
+        setFormData((preinputs) => {
+            return {
+                ...preinputs,
+                registrationFee: logisticsRes.registrationFeePerPiece,
+                shippingCost: logisticsRes.freightRatePerKg,
+            };
+        });
 
     };
 
     // 处理汇率变化
     const handleCurrencyChange = (event) => {
         setSelectedCurrency(event.target.value);
-        handleLogisticPrice();
+        handleLogisticPrice(inputs.expressBoxWeight, inputs.productWeight, logisticsCategory, event.target.value);
     };
 
     const handleChange = (event) => {
         const { name, value } = event.target;
-        setFormData({
-            ...inputs,
-            [name]: value,
+        setFormData((preinputs) => {
+            return {
+                ...preinputs,
+                [name]: value,
+            };
         });
-        handleLogisticPrice();
+        if (name == 'productWeight') {
+            handleLogisticPrice(inputs.expressBoxWeight, value, logisticsCategory, selectedCurrency)
+        } else if (name == 'expressBoxWeight') {
+            handleLogisticPrice(value, inputs.productWeight, logisticsCategory, selectedCurrency)
+        }
     };
 
     // 计算产品定价
@@ -72,7 +92,7 @@ const Calculator = () => {
         const { purchasePrice, domesticShipping, productWeight, expressBoxWeight, shippingCost, registrationFee, profit } = inputs;
         const exchangeRate = exchangeRates[selectedCurrency];
         const totalWeight = parseFloat(productWeight) + parseFloat(expressBoxWeight);
-        const internationalShippingCost = (totalWeight * shippingCost + registrationFee) * 1.15;
+        const internationalShippingCost = (totalWeight * parseFloat(shippingCost) + parseFloat(registrationFee)) * 1.15;
         const totalCost = parseFloat(purchasePrice) + parseFloat(domesticShipping) + internationalShippingCost + parseFloat(profit);
         const finalPriceInCurrency = totalCost * exchangeRate;
         const finalPriceAfterCommission = finalPriceInCurrency / 0.85;
@@ -80,7 +100,7 @@ const Calculator = () => {
         setFinalPrice(finalPriceAfterCommission.toFixed(2));
     };
 
-    
+
 
     return (
         <div>
@@ -114,8 +134,9 @@ const Calculator = () => {
                     <FormSelect
                         aria-label="物流类目"
                         value={logisticsCategory}
-                        onChange={(e) => { setLogisticsCategory(e.target.value); handleLogisticPrice(); }}
+                        onChange={(e) => { setLogisticsCategory(e.target.value); handleLogisticPrice(inputs.expressBoxWeight, inputs.productWeight, e.target.value, selectedCurrency) }}
                     >
+                        <option value="">请选择</option>
                         <option value="yuntuSpecialLineRegistered">云途全球专线挂号（特惠带电）</option>
                         <option value="yuntuSpecialLineRegisteredGeneral">云途全球专线挂号（特惠普货）</option>
                     </FormSelect>
@@ -128,6 +149,7 @@ const Calculator = () => {
                         value={calculationMethod}
                         onChange={(e) => setCalculationMethod(e.target.value)}
                     >
+                        <option value="">自动带出，可手工修正</option>
                         <option value="registeredCalculation">挂号计算</option>
                         <option value="weightBasedCalculation">首重续重计算</option>
                     </FormSelect>
