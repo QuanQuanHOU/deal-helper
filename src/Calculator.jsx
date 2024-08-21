@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Button, InputGroup, FormControl, Alert, Row, FormSelect } from 'react-bootstrap';
+import React, { useState, useEffect, useRef } from 'react';
+import { Form, Button, InputGroup, FormControl, Alert, Row, FormSelect, SearchSelect } from 'react-bootstrap';
 import { fetchExchangeRates } from './ExchangeRateService';
 import { getLogisticsPrice } from './LogisticPriceService';
+import { countries } from './data/countries';
 
 const Calculator = () => {
     const [exchangeRates, setExchangeRates] = useState({});
@@ -19,9 +20,21 @@ const Calculator = () => {
         registrationFee: '',
         profit: 30
     });
+    const [filter, setFilter] = useState('');
+    const [selectedCountry, setSelectedCountry] = useState('');
+    // const fCountryData = countries.map(country => ({
+    //     value: country,
+    //     label: country,
+    // }));
+    const filteredCountries = countries.filter(country =>
+        country.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    const countryRef = useRef();
 
     // 组件加载时获取汇率
     useEffect(() => {
+
         const loadExchangeRates = async () => {
             const rates = await fetchExchangeRates();
             setExchangeRates(rates);
@@ -31,14 +44,23 @@ const Calculator = () => {
 
         loadExchangeRates();
     }, []);
-    const handleLogisticPrice = async (expressBoxWeight, productWeight, logisticsCategory, selectedCurrency) => {
+    const handleLogisticPrice = async (expressBoxWeight, productWeight, logisticsCategory, selectedCountry) => {
 
-        if (!expressBoxWeight || !productWeight || !logisticsCategory || !selectedCurrency) {
+        if (!expressBoxWeight || !productWeight || !logisticsCategory || !selectedCountry) {
+            setCalculationMethod('');
+
+            setFormData((preinputs) => {
+                return {
+                    ...preinputs,
+                    registrationFee: '',
+                    shippingCost: '',
+                };
+            });
             return;
         }
         const totalWeight = parseFloat(productWeight) + parseFloat(expressBoxWeight);
 
-        const logisticsRes = await getLogisticsPrice(logisticsCategory, totalWeight, selectedCurrency);
+        const logisticsRes = await getLogisticsPrice(logisticsCategory, totalWeight, selectedCountry);
         if (!logisticsRes) {
             // 更新前端信息
             setCalculationMethod('');
@@ -67,9 +89,19 @@ const Calculator = () => {
     };
 
     // 处理汇率变化
-    const handleCurrencyChange = (event) => {
-        setSelectedCurrency(event.target.value);
-        handleLogisticPrice(inputs.expressBoxWeight, inputs.productWeight, logisticsCategory, event.target.value);
+    // const handleCurrencyChange = (event) => {
+    //     setSelectedCurrency(event.target.value);
+    //     handleLogisticPrice(inputs.expressBoxWeight, inputs.productWeight, logisticsCategory, event.target.value);
+    // };
+    const handleCountryChange = (country) => {
+        setSelectedCountry(country);
+        if (country.split(':')[1]) {
+            setSelectedCurrency(country.split(':')[1]);
+            console.log('set:' + country.split(':')[1]);
+        } else {
+            setSelectedCurrency('')
+        }
+        handleLogisticPrice(inputs.expressBoxWeight, inputs.productWeight, logisticsCategory, country);
     };
 
     const handleChange = (event) => {
@@ -81,9 +113,9 @@ const Calculator = () => {
             };
         });
         if (name == 'productWeight') {
-            handleLogisticPrice(inputs.expressBoxWeight, value, logisticsCategory, selectedCurrency)
+            handleLogisticPrice(inputs.expressBoxWeight, value, logisticsCategory, selectedCountry)
         } else if (name == 'expressBoxWeight') {
-            handleLogisticPrice(value, inputs.productWeight, logisticsCategory, selectedCurrency)
+            handleLogisticPrice(value, inputs.productWeight, logisticsCategory, selectedCountry)
         }
     };
 
@@ -108,12 +140,31 @@ const Calculator = () => {
             <Form>
                 {/* 其他表单项 */}
                 <Form.Group controlId="currencySelect">
-                    <Form.Label>选择币种：</Form.Label>
-                    <Form.Control as="select" value={selectedCurrency} onChange={handleCurrencyChange}>
+                    <Form.Label>选择国家：</Form.Label>
+                    {/* <Form.Control as="select" value={selectedCurrency} 
+                    // onChange={handleCurrencyChange}
+                    >
                         {Object.entries(exchangeRates).map(([key, value]) => (
                             <option key={key} value={key}>{key} ({value})</option>
                         ))}
+                    </Form.Control> */}
+                    <FormControl
+                        type="text"
+                        placeholder="Search for a country"
+                        value={filter}
+                        onChange={(e) => {
+                            setFilter(e.target.value);
+                            //setSelectedCountry('');
+                            handleCountryChange('');
+                        }}
+                    />
+                    <Form.Control as="select" value={selectedCountry} onChange={(e) => { handleCountryChange(e.target.value) }} ref={countryRef}>
+                        <option key={-1} value={''}>请选择国家</option>
+                        {filteredCountries.map((country, index) => (
+                            <option key={index} value={country}>{country}</option>
+                        ))}
                     </Form.Control>
+
                 </Form.Group>
                 <Form.Group controlId="exchangeRate">
                     <Form.Label>汇率：</Form.Label>
@@ -134,7 +185,7 @@ const Calculator = () => {
                     <FormSelect
                         aria-label="物流类目"
                         value={logisticsCategory}
-                        onChange={(e) => { setLogisticsCategory(e.target.value); handleLogisticPrice(inputs.expressBoxWeight, inputs.productWeight, e.target.value, selectedCurrency) }}
+                        onChange={(e) => { setLogisticsCategory(e.target.value); handleLogisticPrice(inputs.expressBoxWeight, inputs.productWeight, e.target.value, selectedCountry) }}
                     >
                         <option value="">请选择</option>
                         <option value="yuntuSpecialLineRegistered">云途全球专线挂号（特惠带电）</option>
@@ -237,7 +288,7 @@ const Calculator = () => {
                 </Button>
             </Form>
             <Alert variant="info">
-                产品最终售价: {finalPrice}-{selectedCurrency}
+                产品最终售价: {finalPrice}-{selectedCountry}
             </Alert>
         </div>
     );
